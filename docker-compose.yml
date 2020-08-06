@@ -1,0 +1,55 @@
+version: '3'
+services:
+
+  influxdb:
+    image: influxdb:latest
+    container_name: influxdb
+    restart: always
+    ports:
+      - 8086:8086
+      - 8082:8082
+    volumes:
+      # docker volume
+      - influxdb-volume:/var/lib/influxdb
+      # local data
+      # - ./data/influxdb/:/var/lib/influxdb
+      - ./influx_init.iql:/docker-entrypoint-initdb.d/influx_init.iql
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: always
+    ports:
+      - 3000:3000
+    volumes:
+      # grafana volume
+      - grafana-volume:/var/lib/grafana
+      # local data
+      # - ./data/grafana/:/var/lib/grafana
+      - ./grafana-provisioning/:/etc/grafana/provisioning
+    depends_on:
+      - influxdb
+
+  chronograf:
+    image: chronograf:latest
+    container_name: chronograf
+    restart: always
+    ports:
+      - 8888:8888
+    volumes:
+      - chronograf-storage:/var/lib/chronograf
+      # - ./data/chronograf/:/var/lib/chronograf
+    environment:
+      - INFLUXDB_URL=http://influxdb:8086
+      - INFLUXDB_USERNAME=${INFLUXDB_USERNAME}
+      - INFLUXDB_PASSWORD=${INFLUXDB_PASSWORD}
+    depends_on:
+      - influxdb
+
+# use docker volumes
+volumes:
+  influxdb-volume:
+    external: true
+  chronograf-storage:
+  grafana-volume:
+    external: true
