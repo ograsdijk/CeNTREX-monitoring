@@ -1,55 +1,43 @@
-version: '3'
-services:
+# first create network centrex with `docker network create centrex`
+version: "3.9"
 
+services:
   influxdb:
-    image: influxdb:latest
+    image: influxdb
     container_name: influxdb
     restart: always
     ports:
       - 8086:8086
-      - 8082:8082
+    networks:
+      - centrex
     volumes:
-      # docker volume
-      - influxdb-volume:/var/lib/influxdb
-      # local data
-      # - ./data/influxdb/:/var/lib/influxdb
-      - ./influx_init.iql:/docker-entrypoint-initdb.d/influx_init.iql
-
+      - CeNTREX_influxdb:/var/lib/influxdb
+      - CeNTREX_influxdb:/var/lib/influxdb2
+      - CeNTREX_influxdb:/etc/influxdb2
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=
+      - DOCKER_INFLUXDB_INIT_PASSWORD=
+      - DOCKER_INFLUXDB_INIT_ORG=CeNTREX
+      - DOCKER_INFLUXDB_INIT_BUCKET=environment
+      - DOCKER_INFLUXDB_INIT_RETENTION=104w
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana
     container_name: grafana
     restart: always
     ports:
       - 3000:3000
+    networks:
+      - centrex
     volumes:
-      # grafana volume
-      - grafana-volume:/var/lib/grafana
-      # local data
-      # - ./data/grafana/:/var/lib/grafana
-      - ./grafana-provisioning/:/etc/grafana/provisioning
-    depends_on:
-      - influxdb
-
-  chronograf:
-    image: chronograf:latest
-    container_name: chronograf
-    restart: always
-    ports:
-      - 8888:8888
-    volumes:
-      - chronograf-storage:/var/lib/chronograf
-      # - ./data/chronograf/:/var/lib/chronograf
+      - CeNTREX_grafana:/var/lib/grafana:rw
     environment:
-      - INFLUXDB_URL=http://influxdb:8086
-      - INFLUXDB_USERNAME=${INFLUXDB_USERNAME}
-      - INFLUXDB_PASSWORD=${INFLUXDB_PASSWORD}
+      - GF_SECURITY_ADMIN_USER=
+      - GF_SECURITY_ADMIN_PASSWORD=
     depends_on:
       - influxdb
-
-# use docker volumes
+networks:
+  centrex:
 volumes:
-  influxdb-volume:
-    external: true
-  chronograf-storage:
-  grafana-volume:
-    external: true
+  CeNTREX_influxdb:
+  CeNTREX_grafana:
